@@ -202,7 +202,7 @@ pub fn init(opt: UiOpt) -> UiRes {
                         height,
                         samples,
                         target: target_arc.clone(),
-                        index: i,
+                        index: i + 1,
                         source,
                         ref_idx: ref_base + i,
                     })
