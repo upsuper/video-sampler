@@ -3,6 +3,7 @@ use self::queue_row::QueueRow;
 use crate::resource_path;
 use crate::sampler::Task;
 use gdk::DragAction;
+use gdk_pixbuf::Pixbuf;
 use gio::prelude::*;
 use glib::{GString, MainContext, PRIORITY_DEFAULT};
 use gtk::prelude::*;
@@ -46,6 +47,8 @@ pub fn init(opt: UiOpt) -> UiRes {
     let button_clear: Button = builder.get_object("button_clear").unwrap();
     let button_queue: Button = builder.get_object("button_queue").unwrap();
 
+    let icon = Pixbuf::new_from_resource(resource_path!("/icon-64.png")).unwrap();
+    window.set_icon(Some(&icon));
     window.set_title("Video Sampler");
     window.connect_hide(|_| gtk::main_quit());
     window.show_all();
