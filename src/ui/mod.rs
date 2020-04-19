@@ -1,5 +1,6 @@
 use self::file_row::FileRow;
 use self::queue_row::QueueRow;
+use crate::resource_path;
 use crate::sampler::Task;
 use gdk::DragAction;
 use gio::prelude::*;
@@ -34,7 +35,7 @@ pub struct UiRes {
 }
 
 pub fn init(opt: UiOpt) -> UiRes {
-    let builder = gtk::Builder::new_from_string(include_str!("main.glade"));
+    let builder = gtk::Builder::new_from_resource(resource_path!("/main.glade"));
     let window: Window = builder.get_object("window_main").unwrap();
     let entry_prefix: Entry = builder.get_object("entry_prefix").unwrap();
     let entry_height: Entry = builder.get_object("entry_height").unwrap();
@@ -90,7 +91,7 @@ pub fn init(opt: UiOpt) -> UiRes {
 
     let queue = gio::ListStore::new(QueueRow::static_type());
     list_queue.bind_model(Some(&queue), |item| {
-        let builder = gtk::Builder::new_from_string(include_str!("queue_row.glade"));
+        let builder = gtk::Builder::new_from_resource(resource_path!("/queue_row.glade"));
         let progress: ProgressBar = builder.get_object("progress").unwrap();
         let label_name: Label = builder.get_object("label_name").unwrap();
         item.bind_property("name", &label_name, "label")

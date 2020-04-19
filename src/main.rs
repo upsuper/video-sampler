@@ -3,6 +3,7 @@ use crate::ui::{Progress, UiOpt, UiRes};
 use anyhow::Result;
 use std::thread;
 
+mod res;
 mod sampler;
 mod ui;
 
@@ -10,6 +11,7 @@ fn main() -> Result<()> {
     gtk::init()?;
     gst::init()?;
 
+    let _res_holder = res::load()?;
     let (task_sender, task_receiver) = crossbeam_channel::unbounded();
     let UiRes { progress_sender } = ui::init(UiOpt { task_sender });
 

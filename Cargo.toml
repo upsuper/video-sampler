@@ -21,3 +21,6 @@ pango = "0.8.0"
 png = "0.16.2"
 rand = "0.7.3"
 url = "2.1.1"
+
+[build-dependencies]
+anyhow = "1.0.28"
