@@ -1,19 +1,32 @@
+use crate::config::AppConfig;
 use crate::sampler::TaskContext;
-use crate::ui::{Progress, UiOpt, UiRes};
+use crate::ui::{DefaultConfig, Progress, UiOpt, UiRes};
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::thread;
 
+mod config;
 mod res;
 mod sampler;
 mod ui;
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Config {
+    default: DefaultConfig,
+}
 
 fn main() -> Result<()> {
     gtk::init()?;
     gst::init()?;
 
     let _res_holder = res::load()?;
+    let app_config = AppConfig::load();
     let (task_sender, task_receiver) = crossbeam_channel::unbounded();
-    let UiRes { progress_sender } = ui::init(UiOpt { task_sender });
+    let UiRes { progress_sender } = ui::init(UiOpt {
+        task_sender,
+        config: app_config.config.clone(),
+    });
 
     for _ in 0..num_cpus::get_physical() {
         let task_receiver = task_receiver.clone();

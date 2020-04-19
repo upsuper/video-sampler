@@ -1,20 +1,22 @@
 use self::file_row::FileRow;
 use self::queue_row::QueueRow;
-use crate::resource_path;
 use crate::sampler::Task;
+use crate::{resource_path, Config};
 use gdk::DragAction;
 use gdk_pixbuf::Pixbuf;
 use gio::prelude::*;
 use glib::{GString, MainContext, PRIORITY_DEFAULT};
 use gtk::prelude::*;
 use gtk::{
-    Align, Button, DestDefaults, Entry, FileChooserButton, Label, ListBox, ProgressBar,
+    Adjustment, Align, Button, DestDefaults, Entry, FileChooserButton, Label, ListBox, ProgressBar,
     TargetEntry, TargetFlags, Window,
 };
 use pango::EllipsizeMode;
+use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::rc::Rc;
 use std::sync::Arc;
 use url::Url;
 
@@ -27,25 +29,63 @@ pub struct Progress {
     pub progress: Option<f64>,
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(default)]
+pub struct DefaultConfig {
+    height: u32,
+    samples: u32,
+    target: Option<PathBuf>,
+}
+
+impl Default for DefaultConfig {
+    fn default() -> Self {
+        DefaultConfig {
+            height: 360,
+            samples: 5,
+            target: None,
+        }
+    }
+}
+
 pub struct UiOpt {
-    pub(crate) task_sender: crossbeam_channel::Sender<Task>,
+    pub config: Rc<RefCell<Config>>,
+    pub task_sender: crossbeam_channel::Sender<Task>,
 }
 
 pub struct UiRes {
-    pub(crate) progress_sender: glib::Sender<Progress>,
+    pub progress_sender: glib::Sender<Progress>,
 }
 
 pub fn init(opt: UiOpt) -> UiRes {
+    let UiOpt {
+        config,
+        task_sender,
+    } = opt;
+
     let builder = gtk::Builder::new_from_resource(resource_path!("/main.glade"));
     let window: Window = builder.get_object("window_main").unwrap();
+    let adjust_samples: Adjustment = builder.get_object("adjust_samples").unwrap();
     let entry_prefix: Entry = builder.get_object("entry_prefix").unwrap();
     let entry_height: Entry = builder.get_object("entry_height").unwrap();
-    let entry_samples: Entry = builder.get_object("entry_samples").unwrap();
     let file_target: FileChooserButton = builder.get_object("file_target").unwrap();
     let list_files: ListBox = builder.get_object("list_files").unwrap();
     let list_queue: ListBox = builder.get_object("list_queue").unwrap();
     let button_clear: Button = builder.get_object("button_clear").unwrap();
     let button_queue: Button = builder.get_object("button_queue").unwrap();
+
+    // Set the default value from the config
+    let config_ref = config.borrow();
+    let default_config = &config_ref.default;
+    entry_height.set_text(&default_config.height.to_string());
+    adjust_samples.set_value(default_config.samples as _);
+    let target_uri = default_config
+        .target
+        .as_ref()
+        .and_then(|path| Url::from_directory_path(path).ok())
+        .map(|url| url.into_string());
+    if let Some(uri) = target_uri {
+        file_target.set_uri(&uri);
+    }
 
     let icon = Pixbuf::new_from_resource(resource_path!("/icon-64.png")).unwrap();
     window.set_icon(Some(&icon));
@@ -111,18 +151,19 @@ pub fn init(opt: UiOpt) -> UiRes {
         move |_| files.upgrade().unwrap().remove_all()
     });
 
-    let task_sender = opt.task_sender;
     button_queue.connect_clicked({
+        let config = Rc::downgrade(&config);
+        let adjust_samples = adjust_samples.downgrade();
         let entry_prefix = entry_prefix.downgrade();
         let entry_height = entry_height.downgrade();
-        let entry_samples = entry_samples.downgrade();
         let file_target = file_target.downgrade();
         let files = files.downgrade();
         let queue = queue.downgrade();
         move |_| {
+            let config = config.upgrade().unwrap();
+            let adjust_samples = adjust_samples.upgrade().unwrap();
             let entry_prefix = entry_prefix.upgrade().unwrap();
             let entry_height = entry_height.upgrade().unwrap();
-            let entry_samples = entry_samples.upgrade().unwrap();
             let file_target = file_target.upgrade().unwrap();
             let files = files.upgrade().unwrap();
             let queue = queue.upgrade().unwrap();
@@ -135,20 +176,21 @@ pub fn init(opt: UiOpt) -> UiRes {
             }
             entry_prefix.set_text("");
             // Get sample height
-            let height = match parse_from_entry(&entry_height) {
+            let height = entry_height
+                .get_text()
+                .and_then(|s| s.as_str().parse::<u32>().ok());
+            let height = match height {
                 Some(n) => n,
                 None => return,
             };
             // Get sample number per video
-            let samples = match parse_from_entry(&entry_samples) {
-                Some(n) => n,
-                None => return,
-            };
+            let samples = adjust_samples.get_value() as _;
             // Get target path
             let target = match file_target.get_uri().as_ref().and_then(file_uri_to_path) {
-                Some(path) => Arc::<Path>::from(path.as_path()),
+                Some(path) => path,
                 None => return,
             };
+            let target_arc = Arc::<Path>::from(target.as_path());
             let ref_base = queue.get_n_items();
             for i in 0..files.get_n_items() {
                 let file: FileRow = files.get_object(i).unwrap().downcast().unwrap();
@@ -159,7 +201,7 @@ pub fn init(opt: UiOpt) -> UiRes {
                         prefix: prefix.clone(),
                         height,
                         samples,
-                        target: target.clone(),
+                        target: target_arc.clone(),
                         index: i,
                         source,
                         ref_idx: ref_base + i,
@@ -172,6 +214,12 @@ pub fn init(opt: UiOpt) -> UiRes {
                 queue.append(&queue_row);
             }
             files.remove_all();
+            // Save the config to default
+            let mut config_ref = config.borrow_mut();
+            let default_config = &mut config_ref.default;
+            default_config.height = height;
+            default_config.samples = samples;
+            default_config.target = Some(target);
         }
     });
 
@@ -201,8 +249,4 @@ fn file_uri_to_path(uri: &GString) -> Option<PathBuf> {
 
 fn file_name_str(path: &Path) -> Option<&str> {
     path.file_name().and_then(OsStr::to_str)
-}
-
-fn parse_from_entry<T: FromStr>(entry: &Entry) -> Option<T> {
-    entry.get_text().and_then(|s| s.as_str().parse().ok())
 }
