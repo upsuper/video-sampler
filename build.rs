@@ -13,8 +13,8 @@ fn main() -> Result<()> {
         .arg(param_with_path("--target=", &out_dir.join("res.gresource")))
         .arg(res_dir.join("spec.gresource.xml"))
         .status()
-        .context("failed to run glib-compile-res")?;
-    ensure!(status.success(), "glib-compile-res must succeed");
+        .context("failed to run glib-compile-resources")?;
+    ensure!(status.success(), "glib-compile-resources must succeed");
     for entry in res_dir.read_dir()? {
         let entry = entry?;
         println!("cargo:rerun-if-changed={}", entry.path().display());
