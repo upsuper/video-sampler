@@ -11,15 +11,15 @@ edition = "2018"
 anyhow = "1.0.28"
 crossbeam-channel = "0.4.2"
 directories = "2.0.2"
-gdk = "0.12.1"
-gdk-pixbuf = "0.8.0"
-gio = "0.8.1"
-glib = "0.9.3"
-gst = { version = "0.15.4", package = "gstreamer" }
-gst-app = { version = "0.15.4", package = "gstreamer-app" }
-gtk = { version = "0.8.1", features = ["v3_16"] }
+gdk = "0.13.0"
+gdk-pixbuf = "0.9.0"
+gio = "0.9.0"
+glib = "0.10.0"
+gst = { version = "0.16.0", package = "gstreamer" }
+gst-app = { version = "0.16.0", package = "gstreamer-app" }
+gtk = { version = "0.9.0", features = ["v3_16"] }
 num_cpus = "1.13.0"
-pango = "0.8.0"
+pango = "0.9.0"
 png = "0.16.2"
 rand = "0.7.3"
 serde = { version = "1.0.106", features = ["derive"] }

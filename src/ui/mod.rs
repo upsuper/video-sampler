@@ -62,7 +62,7 @@ pub fn init(opt: UiOpt) -> UiRes {
         task_sender,
     } = opt;
 
-    let builder = gtk::Builder::new_from_resource(resource_path!("/main.glade"));
+    let builder = gtk::Builder::from_resource(resource_path!("/main.glade"));
     let window: Window = builder.get_object("window_main").unwrap();
     let adjust_samples: Adjustment = builder.get_object("adjust_samples").unwrap();
     let entry_prefix: Entry = builder.get_object("entry_prefix").unwrap();
@@ -87,7 +87,7 @@ pub fn init(opt: UiOpt) -> UiRes {
         file_target.set_uri(&uri);
     }
 
-    let icon = Pixbuf::new_from_resource(resource_path!("/icon-64.png")).unwrap();
+    let icon = Pixbuf::from_resource(resource_path!("/icon-64.png")).unwrap();
     window.set_icon(Some(&icon));
     window.set_title("Video Sampler");
     window.connect_hide(|_| gtk::main_quit());
@@ -134,7 +134,7 @@ pub fn init(opt: UiOpt) -> UiRes {
 
     let queue = gio::ListStore::new(QueueRow::static_type());
     list_queue.bind_model(Some(&queue), |item| {
-        let builder = gtk::Builder::new_from_resource(resource_path!("/queue_row.glade"));
+        let builder = gtk::Builder::from_resource(resource_path!("/queue_row.glade"));
         let progress: ProgressBar = builder.get_object("progress").unwrap();
         let label_name: Label = builder.get_object("label_name").unwrap();
         item.bind_property("name", &label_name, "label")
@@ -169,16 +169,13 @@ pub fn init(opt: UiOpt) -> UiRes {
             let queue = queue.upgrade().unwrap();
             // Get prefix
             let prefix = entry_prefix.get_text();
-            let prefix = prefix.as_ref().map(GString::as_str);
-            let prefix = Arc::<str>::from(prefix.unwrap_or(""));
+            let prefix = Arc::<str>::from(prefix.as_str());
             if prefix.is_empty() {
                 return;
             }
             entry_prefix.set_text("");
             // Get sample height
-            let height = entry_height
-                .get_text()
-                .and_then(|s| s.as_str().parse::<u32>().ok());
+            let height = entry_height.get_text().as_str().parse::<u32>().ok();
             let height = match height {
                 Some(n) => n,
                 None => return,

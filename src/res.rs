@@ -13,7 +13,7 @@ static RESOURCE_BINARY: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/res.gr
 
 pub fn load() -> Result<ResourceHolder> {
     let data = Bytes::from_static(RESOURCE_BINARY);
-    let res = Resource::new_from_data(&data)?;
+    let res = Resource::from_data(&data)?;
     Ok(ResourceHolder::new(res))
 }
 
