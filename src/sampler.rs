@@ -107,7 +107,7 @@ where
 
         // Output to the image file.
         let file_name = format!(
-            "{}-{}-{}-{}-{:03}",
+            "{}-{}-{}-{}-{:03}.png",
             task.prefix,
             task.index,
             seek_pos.minutes().unwrap(),
