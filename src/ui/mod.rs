@@ -82,7 +82,7 @@ pub fn init(opt: UiOpt) -> UiRes {
         .target
         .as_ref()
         .and_then(|path| Url::from_directory_path(path).ok())
-        .map(|url| url.into_string());
+        .map(|url| String::from(url));
     if let Some(uri) = target_uri {
         file_target.set_uri(&uri);
     }

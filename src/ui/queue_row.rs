@@ -2,7 +2,7 @@ use glib::subclass::prelude::*;
 use glib::subclass::simple::{ClassStruct, InstanceStruct};
 use glib::translate::{FromGlibPtrFull, ToGlib, ToGlibPtr};
 use glib::types::StaticType;
-use glib::{glib_object_wrapper, glib_wrapper, Cast, Object};
+use glib::{glib_wrapper, Cast, Object};
 
 glib_wrapper! {
     pub struct QueueRow(Object<
