@@ -20,7 +20,7 @@ gst-app = { version = "0.16.0", package = "gstreamer-app" }
 gtk = { version = "0.9.0", features = ["v3_16"] }
 num_cpus = "1.13.0"
 pango = "0.9.0"
-png = "0.16.2"
+png = "0.17.5"
 rand = "0.8.5"
 serde = { version = "1.0.106", features = ["derive"] }
 toml = "0.5.6"

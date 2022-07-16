@@ -118,7 +118,7 @@ where
         let output = File::create(&output_path).context("failed to create output file")?;
         let output = BufWriter::new(output);
         let mut encoder = png::Encoder::new(output, width as u32, height as u32);
-        encoder.set_color(ColorType::RGB);
+        encoder.set_color(ColorType::Rgb);
         encoder.set_depth(BitDepth::Eight);
         encoder
             .write_header()
